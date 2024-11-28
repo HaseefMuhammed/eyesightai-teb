@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EYE SIGHT AI</title>
+    <title>Object Detection with Speech</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,8 +16,8 @@
             border: 2px solid #ddd;
             margin-bottom: 10px;
         }
-        #object-name {
-            font-size: 24px;
+        #object-info {
+            font-size: 18px;
             font-weight: bold;
             margin-top: 20px;
         }
@@ -27,70 +27,79 @@
 
 <h1>EYE SIGHT AI</h1>
 <video id="video" autoplay></video>
-<p id="object-name">Searching ....</p>
+<p id="object-info">Detecting objects...</p>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
 <script>
     const videoElement = document.getElementById('video');
-    const objectNameElement = document.getElementById('object-name');
+    const objectInfoElement = document.getElementById('object-info');
     let model;
-    let lastSpokenObject = ''; // Keep track of the last spoken object to avoid repeating speech
+    let lastSpokenObject = ""; // To avoid repeated announcements
 
-    // Access the back camera and display it on the video element
-    function startCamera() {
-        navigator.mediaDevices.enumerateDevices()
-            .then(devices => {
-                const backCamera = devices.find(device => device.kind === 'videoinput' && device.label.includes('back'));
-                const constraints = {
-                    video: {
-                        deviceId: backCamera ? { exact: backCamera.deviceId } : undefined
-                    }
-                };
+    // Access the camera
+    async function startCamera() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-                return navigator.mediaDevices.getUserMedia(constraints);
-            })
-            .then((stream) => {
-                videoElement.srcObject = stream;
-            })
-            .catch((err) => {
-                console.error('Camera access error:', err);
-            });
+            // Find the back camera if available
+            const backCamera = videoDevices.find(device =>
+                device.label.toLowerCase().includes('back')
+            );
+
+            // Set constraints for back camera or default to first video device
+            const constraints = {
+                video: {
+                    deviceId: backCamera ? { exact: backCamera.deviceId } : undefined
+                }
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            videoElement.srcObject = stream;
+        } catch (err) {
+            console.error('Camera access error:', err);
+            objectInfoElement.innerText = 'Unable to access the camera.';
+        }
     }
 
-    // Load the COCO-SSD model for object detection
+    // Load the COCO-SSD model
     async function loadModel() {
         model = await cocoSsd.load();
         console.log("Model loaded");
         startObjectDetection();
     }
 
-    // Function to continuously detect objects
+    // Function to speak out detected object
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Start object detection
     function startObjectDetection() {
         setInterval(() => {
             model.detect(videoElement).then(predictions => {
                 if (predictions.length > 0) {
-                    const objectName = predictions[0].class; // Get the name of the first detected object
+                    const firstPrediction = predictions[0];
+                    const objectName = firstPrediction.class;
 
-                    // Update the display if the detected object is different
+                    // Display the detected object
+                    objectInfoElement.innerHTML = `
+                        Detected: <b>${objectName}</b>
+                    `;
+
+                    // Speak the object name if it is different from the last spoken one
                     if (objectName !== lastSpokenObject) {
-                        objectNameElement.innerText = objectName;
-                        speakObjectName(objectName); // Speak the object's name
-                        lastSpokenObject = objectName; // Update the last spoken object
+                        speak(`This is  ${objectName}`);
+                        lastSpokenObject = objectName;
                     }
                 } else {
-                    objectNameElement.innerText = "No object detected!";
+                    objectInfoElement.innerText = "No object detected!";
                 }
             });
-        }, 1000); // Detect objects every second
-    }
-
-    // Function to speak the detected object name
-    function speakObjectName(name) {
-        const speech = new SpeechSynthesisUtterance(name);
-        speech.lang = 'en-US';
-        window.speechSynthesis.speak(speech);
+        }, 1000); // Run detection every second
     }
 
     // Initialize the app
