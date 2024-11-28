@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EYE SIGHT AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #video {
+            width: 100%;
+            max-width: 600px;
+            border: 2px solid #ddd;
+            margin-bottom: 10px;
+        }
+        #object-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>EYE SIGHT AI</h1>
+<video id="video" autoplay></video>
+<p id="object-name">Searching ....</p>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+<script>
+    const videoElement = document.getElementById('video');
+    const objectNameElement = document.getElementById('object-name');
+    let model;
+    let lastSpokenObject = ''; // Keep track of the last spoken object to avoid repeating speech
+
+    // Access the back camera and display it on the video element
+    function startCamera() {
+        navigator.mediaDevices.enumerateDevices()
+            .then(devices => {
+                const backCamera = devices.find(device => device.kind === 'videoinput' && device.label.includes('back'));
+                const constraints = {
+                    video: {
+                        deviceId: backCamera ? { exact: backCamera.deviceId } : undefined
+                    }
+                };
+
+                return navigator.mediaDevices.getUserMedia(constraints);
+            })
+            .then((stream) => {
+                videoElement.srcObject = stream;
+            })
+            .catch((err) => {
+                console.error('Camera access error:', err);
+            });
+    }
+
+    // Load the COCO-SSD model for object detection
+    async function loadModel() {
+        model = await cocoSsd.load();
+        console.log("Model loaded");
+        startObjectDetection();
+    }
+
+    // Function to continuously detect objects
+    function startObjectDetection() {
+        setInterval(() => {
+            model.detect(videoElement).then(predictions => {
+                if (predictions.length > 0) {
+                    const objectName = predictions[0].class; // Get the name of the first detected object
+
+                    // Update the display if the detected object is different
+                    if (objectName !== lastSpokenObject) {
+                        objectNameElement.innerText = objectName;
+                        speakObjectName(objectName); // Speak the object's name
+                        lastSpokenObject = objectName; // Update the last spoken object
+                    }
+                } else {
+                    objectNameElement.innerText = "No object detected!";
+                }
+            });
+        }, 1000); // Detect objects every second
+    }
+
+    // Function to speak the detected object name
+    function speakObjectName(name) {
+        const speech = new SpeechSynthesisUtterance(name);
+        speech.lang = 'en-US';
+        window.speechSynthesis.speak(speech);
+    }
+
+    // Initialize the app
+    loadModel();
+    startCamera();
+</script>
+
+</body>
+</html>
