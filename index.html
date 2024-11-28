@@ -27,7 +27,7 @@
 
 <h1>EYE SIGHT AI</h1>
 <video id="video" autoplay></video>
-<p id="object-info">Detecting objects...</p>
+<p id="object-info">Loading model...</p>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
@@ -66,8 +66,11 @@
 
     // Load the COCO-SSD model
     async function loadModel() {
+        objectInfoElement.innerText = "Model is loading, please wait...";
+        speak("Model is loading, please wait.");
         model = await cocoSsd.load();
         console.log("Model loaded");
+        objectInfoElement.innerText = "Detecting objects...";
         startObjectDetection();
     }
 
