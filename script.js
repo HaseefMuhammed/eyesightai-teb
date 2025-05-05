@@ -1,3 +1,13 @@
+/*
+
+  Project: EYE SIGHT AI
+  Author: Haseef Muhammed PC
+  Website: https://haseefmuhammed.netlify.app
+  License: Custom MIT-based — Personal and Educational Use Only
+
+*/
+
+
 const videoElement = document.getElementById('video');
   const objectInfoElement = document.getElementById('object-info');
   const loadingScreen = document.getElementById('loading-screen');
