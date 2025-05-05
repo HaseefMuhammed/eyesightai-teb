@@ -1,114 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Object Detection with Speech</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        #video {
-            width: 100%;
-            max-width: 600px;
-            border: 2px solid #ddd;
-            margin-bottom: 10px;
-        }
-        #object-info {
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eye Sight AI</title>
+
+  <!-- Bootstrap CDN -->
+  <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="loading-screen">
+        <button class="btn btn-primary" id="startBtn">Start Eye Sight AI</button>
+        <p class="text-primary mt-3">Model is loading: <span id="loading-percentage">0</span>%</p>
+      </div>
+      
+      <div class="container-fluid d-none" id="main-content">
+        <div>
+          <video id="video" autoplay playsinline></video>
+        </div>
+        <div id="text-area">
+          <h1 class="text-primary">EYE SIGHT AI</h1>
+          <p class="text-secondary">Powered by: BET Innovations X TEB Innovations</p>
+          <div id="object-info" class="alert alert-info">Initializing...</div>
+        </div>
+      </div>
 
-<h1>EYE SIGHT AI</h1>
-<video id="video" autoplay></video>
-<p id="object-info">Loading model...</p>
-
+<!-- TensorFlow & COCO-SSD -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
-<script>
-    const videoElement = document.getElementById('video');
-    const objectInfoElement = document.getElementById('object-info');
-    let model;
-    let lastSpokenObject = ""; // To avoid repeated announcements
-
-    // Access the camera
-    async function startCamera() {
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-            // Find the back camera if available
-            const backCamera = videoDevices.find(device =>
-                device.label.toLowerCase().includes('back')
-            );
-
-            // Set constraints for back camera or default to first video device
-            const constraints = {
-                video: {
-                    deviceId: backCamera ? { exact: backCamera.deviceId } : undefined
-                }
-            };
-
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            videoElement.srcObject = stream;
-        } catch (err) {
-            console.error('Camera access error:', err);
-            objectInfoElement.innerText = 'Unable to access the camera.';
-        }
-    }
-
-    // Load the COCO-SSD model
-    async function loadModel() {
-        objectInfoElement.innerText = "Model is loading, please wait...";
-        speak("Model is loading, please wait.");
-        model = await cocoSsd.load();
-        console.log("Model loaded");
-        objectInfoElement.innerText = "Detecting objects...";
-        startObjectDetection();
-    }
-
-    // Function to speak out detected object
-    function speak(text) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // Start object detection
-    function startObjectDetection() {
-        setInterval(() => {
-            model.detect(videoElement).then(predictions => {
-                if (predictions.length > 0) {
-                    const firstPrediction = predictions[0];
-                    const objectName = firstPrediction.class;
-
-                    // Display the detected object
-                    objectInfoElement.innerHTML = `
-                        Detected: <b>${objectName}</b>
-                    `;
-
-                    // Speak the object name if it is different from the last spoken one
-                    if (objectName !== lastSpokenObject) {
-                        speak(`This is  ${objectName}`);
-                        lastSpokenObject = objectName;
-                    }
-                } else {
-                    objectInfoElement.innerText = "No object detected!";
-                }
-            });
-        }, 1000); // Run detection every second
-    }
-
-    // Initialize the app
-    loadModel();
-    startCamera();
-</script>
+<script src="script.js"></script>
+<script src="bootstrap.js"></script>
 
 </body>
 </html>
